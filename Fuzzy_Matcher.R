@@ -227,6 +227,7 @@ Fuzzy_Matcher <- function(df1, df2, focus_term){ #Focus term is a string that
       } else { #Otherwise, the save options Modal appears
         showModal(modalDialog(
           title = "Please select save options",
+          checkboxInput("orig_col_names", "Would you like to prepare the output for merging with original datasets (strip to ID columns and use original column names)?", value = T,  width = NULL),
           radioButtons("outputoption", h4("Output options"),
                        choices = list("R dataframe" = 1, "CSV file" = 2)),
           textInput("FileName", "Choose file/dataframe name",
@@ -238,6 +239,10 @@ Fuzzy_Matcher <- function(df1, df2, focus_term){ #Focus term is a string that
       observeEvent(input$outputcontinue, { #Once the save buttons are selected and confirmed, the summary screen appears
         end_time <- Sys.time()
         time_taken <- round((end_time-start_time), digits = 2)
+        if(input$orig_col_names == T){
+          output_matches <- output_matches[,c(1,3,5)]
+          colnames(output_matches) <- c(df1_names[1], df2_names[1], "Confidence")
+        }
         if (input$outputoption == 1){
           assign(paste0(input$FileName), output_matches, envir = .GlobalEnv)
           showModal(modalDialog(
