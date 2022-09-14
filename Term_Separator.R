@@ -1,3 +1,9 @@
+#---
+#title: Term Separator
+#author: Thomas Codd
+#Github: https://github.com/TomCodd/Nutrition_Functions
+#---
+
 library(tidyverse)
 library(fuzzyjoin)
 library(rhandsontable)

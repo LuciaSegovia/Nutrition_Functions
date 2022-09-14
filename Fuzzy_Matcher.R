@@ -1,3 +1,9 @@
+#---
+#title: Fuzzy Matcher
+#author: Thomas Codd
+#Github: https://github.com/TomCodd/Nutrition_Functions
+#---
+
 library(tidyverse)
 library(fuzzyjoin)
 library(rhandsontable)
@@ -79,9 +85,9 @@ Fuzzy_Matcher <- function(df1, df2, focus_term){ #Focus term is a string that
   fuzzy_output <- stringdist_join(df1, df2, #This selects the two lists to check matches against
                                   by = "item_name", #This allows you to select the field by which the search will be done
                                   mode = "left",
-                                  method = "jw", #the fuzzy search method - more info here, need to do some research
-                                  ignore_case=TRUE,
-                                  max_dist = 0.3, #The maximum distance between the two strings - I believe this varies dependent on the method
+                                  method = "jw", #the fuzzy search method - more info here, need to do some research - https://www.rdocumentation.org/packages/stringdist/versions/0.9.8/topics/stringdist-metrics
+                                  ignore_case = TRUE,
+                                  max_dist = 0.35, #The maximum distance between the two strings - I believe this varies dependent on the method
                                   distance_col = "dist") #This lists the distances and sets the column name they should be listed under - a perfect match should be 0
   
   
@@ -97,10 +103,12 @@ Fuzzy_Matcher <- function(df1, df2, focus_term){ #Focus term is a string that
   
   if(!missing(focus_term)){
     fuzzy_output_selection <- fuzzy_output_selection %>%
-      filter(grepl(focus_term, item_name.x) | dist<=0.225) #This introduces a filter. By combining this with the max_dist in the fuzzy search,  the end
-    }# result is that any items with the focus term in their name are listed if their distance is under 0.3, 
-    # along with anything with a distance of 0.225 or lower. This makes the distance more forgiving for items with that focus term in them.
-    
+      filter(grepl(focus_term, item_name.x) | dist <= 0.3) #This introduces a filter. By combining this with the max_dist in the fuzzy search,  the end
+    } else { # result is that any items with the focus term in their name are listed if their distance is under 0.3, 
+      fuzzy_output_selection <- fuzzy_output_selection %>% # along with anything with a distance of 0.225 or lower. This makes the distance more forgiving for items with that focus term in them.
+        filter(dist <= 0.3)
+    }
+
   
   # Prep work for match confirmations ----
   
@@ -157,7 +165,7 @@ Fuzzy_Matcher <- function(df1, df2, focus_term){ #Focus term is a string that
     values <- reactiveValues(data = DF) #Imports the data as reactiveValues
     
     observeEvent(input$table,{
-      input_table<-as.data.frame(hot_to_r(input$table)) #Makes the table "hot" - i.e. interactable with rhandsontable
+      input_table<-as.data.frame(hot_to_r(input$table)) #Makes the table "hot" - i.e. interact-able with rhandsontable
       
       matched_df2_codes <- input_table[,3][input_table[,7] == TRUE] #Creates a list of list A codes that have been successfully matched
       matched_df1_codes <- input_table[,5][input_table[,7] == TRUE] #creates a list of matched df1 codes
@@ -209,6 +217,18 @@ Fuzzy_Matcher <- function(df1, df2, focus_term){ #Focus term is a string that
     })
     
     observeEvent(input$saveBtn, { #Controls what happens when the save button is pressed
+      input_table<-as.data.frame(hot_to_r(input$table)) #Makes the table "hot" - i.e. interact-able with rhandsontable
+      
+      # This next bit of code is an attempt to stop the skipping of confidence values when forgotten occasionally - essentially refreshes the input table before saving.
+      matched_df2_codes <- input_table[,3][input_table[,7] == TRUE] #Creates a list of list A codes that have been successfully matched
+      matched_df1_codes <- input_table[,5][input_table[,7] == TRUE] #creates a list of matched df1 codes
+      incorrect_matched_codes <- input_table[,1][input_table[,3] %in% matched_df2_codes & input_table[,7] == FALSE | input_table[,5] %in% matched_df1_codes & input_table[,7] == FALSE] #creates the list of codes that are incorrect matches
+      input_table[,2] <- input_table[,1] #resets pseudo_ID to ID
+      input_table[,2][which(input_table[,1] %in% incorrect_matched_codes)]<-NA #Sets PseudoID to NA if the row contains an incorrect match
+      input_table<-input_table[order(input_table[,2], na.last=TRUE),] #re-sorts the table based on pseudotable, putting NA matches at the bottom
+      values$data<-input_table
+      # End of refreshing input table.
+      
       output_table <- as.data.frame(hot_to_r(input$table)) #Creates an output table from the current data table
       matches <- output_table[,1][output_table[,7] == TRUE] #Creates a list of the match row ID's
       true_matches <- output_table%>%
