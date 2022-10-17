@@ -90,7 +90,7 @@ Group_Summariser <- function(df1, group_ID_col, secondary_sort_col, sep_row = F,
   sorted_table <- rbind(sorted_table, new_row)
   
   if(weighting_col == T){
-    sorted_table$Weighting_Factor <- c(replicate((nrow(sorted_table) - 1), (1/(nrow(sorted_table) - 1))), "")
+    sorted_table$Weighting_Factor <- c(replicate((nrow(sorted_table) - 1), round((1/(nrow(sorted_table) - 1)), 2)), "")
   }
   if(seq_col == T){
     sorted_table$Sequence <- c(1:(nrow(sorted_table) - 1), "")
@@ -136,7 +136,7 @@ Group_Summariser <- function(df1, group_ID_col, secondary_sort_col, sep_row = F,
     secondary_table <- rbind(secondary_table, new_row)
     
     if(weighting_col == T){
-      secondary_table$Weighting_Factor <- c(replicate((nrow(secondary_table) - 1), (1/(nrow(secondary_table) - 1))), "")
+      secondary_table$Weighting_Factor <- c(replicate((nrow(secondary_table) - 1), round((1/(nrow(secondary_table) - 1)), 2)), "")
     }
     if(seq_col == T){
       secondary_table$Sequence <- c(1:(nrow(secondary_table) - 1), "")
