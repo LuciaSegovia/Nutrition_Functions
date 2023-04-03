@@ -15,7 +15,18 @@ library (docstring)
 
 Fuzzy_Matcher <- function(df1, df2, focus_term){ #Focus term is a string that 
   #makes the filtering more lenient - use to catch more items with this term in 
-  #them. Default is "raw".
+  #them; for example "raw" when looking at food items would prioritise raw foods. 
+  
+  
+  
+  #---
+  #Title: Fuzzy Matcher
+  #Author: Thomas Codd
+  #Version: 1.0.1
+  #Changelog: V1.0.0 -> V1.0.1; Sped up the process considerably by removing some conditional formatting on output table
+  #Github: https://github.com/TomCodd/Nutrition_Functions
+  #---
+  
   
   #' A GUI interface to match rows in two dataframes to each other via a fuzzy 
   #' string search
@@ -47,16 +58,16 @@ Fuzzy_Matcher <- function(df1, df2, focus_term){ #Focus term is a string that
   stopifnot("df2 is too long - please make sure the input dataframes are two columns in length." = (length(df2) == 2))
   
   if(!missing(focus_term)){
-  stopifnot("The focus term is not a character or string - please input a character or string, e.g. 'raw'" = is.character(focus_term))
+    stopifnot("The focus term is not a character or string - please input a character or string, e.g. 'raw'" = is.character(focus_term))
   }
-
+  
   
   
   # Data pre-processing ----
   
   #Starting checks - the timer is started, dataframe metadata is gathered, and columns are renamed
   #Also column name creation, as some quirk means it doesn't work when its wanted later on
-
+  
   start_time <- Sys.time() #Start time for the timer is set
   
   new_column_names <- c("ID", "Pseudo ID", #Creates a list of new column names to be applied to the table
@@ -99,16 +110,15 @@ Fuzzy_Matcher <- function(df1, df2, focus_term){ #Focus term is a string that
   fuzzy_output_selection <- fuzzy_output %>% 
     group_by(item_name.x) %>% #output formatting - this makes it so that the output is organised by the item_name.x, (x being the first list item at the start of the tool)
     slice_min(dist, n = 5) #This means only the closest 5 matches are listed per item on the second dataframe
-    
+  
   
   if(!missing(focus_term)){
     fuzzy_output_selection <- fuzzy_output_selection %>%
-      filter(grepl(focus_term, item_name.x) | dist <= 0.3) #This introduces a filter. By combining this with the max_dist in the fuzzy search,  the end
-    } else { # result is that any items with the focus term in their name are listed if their distance is under 0.3, 
-      fuzzy_output_selection <- fuzzy_output_selection %>% # along with anything with a distance of 0.225 or lower. This makes the distance more forgiving for items with that focus term in them.
-        filter(dist <= 0.3)
-    }
-
+      filter(grepl(focus_term, item_name.x) | dist<=0.225) #This introduces a filter. By combining this with the max_dist in the fuzzy search,  the end
+  }# result is that any items with the focus term in their name are listed if their distance is under 0.3, 
+  # along with anything with a distance of 0.225 or lower. This makes the distance more forgiving for items with that focus term in them.
+  
+  
   
   # Prep work for match confirmations ----
   
@@ -143,7 +153,7 @@ Fuzzy_Matcher <- function(df1, df2, focus_term){ #Focus term is a string that
   # RShiny - Match confirmation ----
   
   DF <- fuzzy_output_selection
-
+  
   ui <- (fluidPage( #this outlines the main page design
     fluidRow(
       column(12,
@@ -184,29 +194,9 @@ Fuzzy_Matcher <- function(df1, df2, focus_term){ #Focus term is a string that
         hot_col(col="Confidence", type = "dropdown", source = c("","high", "medium", "low")) %>% #Creates the confidence dropdown for that column
         
         #These renderers colour the incorrect matches pink, and make them uneditable - different renderers for the different type of columns
-        hot_col(1:6, renderer = "
-           function (instance, td, row, col, prop, value, cellProperties) {
-             Handsontable.renderers.TextRenderer.apply(this, arguments);
-             var ID = instance.getData()[row][0]
-             var pseudoID = instance.getData()[row][1]
-             if (ID !== pseudoID) {
-              td.style.background = 'pink';
-             }
-             
-           }") %>%
         hot_col(7, renderer = "
            function (instance, td, row, col, prop, value, cellProperties) {
              Handsontable.renderers.CheckboxRenderer.apply(this, arguments);
-             var ID = instance.getData()[row][0]
-             var pseudoID = instance.getData()[row][1]
-             if (ID !== pseudoID) {
-              td.style.background = 'pink';
-              cellProperties.readOnly = true;
-             }
-           }") %>%
-        hot_col(8, renderer = "
-           function (instance, td, row, col, prop, value, cellProperties) {
-             Handsontable.renderers.DropdownRenderer.apply(this, arguments);
              var ID = instance.getData()[row][0]
              var pseudoID = instance.getData()[row][1]
              if (ID !== pseudoID) {
