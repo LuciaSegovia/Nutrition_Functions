@@ -1,8 +1,3 @@
-#---
-#title: Fuzzy Matcher
-#author: Thomas Codd
-#Github: https://github.com/TomCodd/Nutrition_Functions
-#---
 
 library(tidyverse)
 library(fuzzyjoin)
